@@ -17,8 +17,8 @@ on:
         required: true
         type: choice
         options:
-          - immediate
-          - scheduled
+          - Immediate
+          - Scheduled
       notes:
         required: false
         type: string
