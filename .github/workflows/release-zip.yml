@@ -91,6 +91,7 @@ jobs:
           zip -r "$ZIP_NAME" . -x ".git/*" ".github/*"
 
       - name: Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "${{ inputs.project_key }}_v${{ steps.vars.outputs.date }}_${{ inputs.environment }}"
@@ -101,15 +102,39 @@ jobs:
             Environment: ${{ inputs.environment }}
             Publish Mode: ${{ inputs.publish_mode }}
 
-            Notes:
+          Notes:
             ${{ inputs.notes }}
           files: |
             *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract release asset URL
+        id: extract_urls
+        run: |
+          RELEASE_URL="${{ steps.create_release.outputs.url }}"
+          ZIP_URL=$(echo '${{ steps.create_release.outputs.assets }}' | jq -r '.[0].browser_download_url')
+
+          echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          echo "zip_url=$ZIP_URL" >> $GITHUB_OUTPUT
+
       - name: Resume n8n workflow
-      run: |
-        curl -X POST "${{ inputs.resumeUrl }}" \
-        -H "Content-Type: application/json" \
-        -d '{"status":"success"}'
+        run: |
+          curl -X POST "${{ inputs.resumeUrl }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+              "status": "success",
+              "request_id": "${{ inputs.request_id }}",
+              "release_url": "${{ steps.extract_urls.outputs.release_url }}",
+              "zip_url": "${{ steps.extract_urls.outputs.zip_url }}"
+              }'
+
+      - name: Resume n8n workflow (failure)
+        if: failure()
+        run: |
+          curl -X POST "${{ inputs.resumeUrl }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+              "status": "failure",
+              "request_id": "${{ inputs.request_id }}"
+              }'
