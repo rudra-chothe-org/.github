@@ -3,9 +3,10 @@ name: Create Release ZIP
 on:
   workflow_dispatch:
     inputs:
-      project:
+      project_key:
         required: true
         type: string
+
       environment:
         required: true
         type: choice
@@ -13,12 +14,22 @@ on:
           - prod
           - preprod
           - test
+
       publish_mode:
         required: true
         type: choice
         options:
           - Immediate
           - Scheduled
+
+      request_id:
+        required: true
+        type: string
+
+      publisher_email:
+        required: true
+        type: string
+
       notes:
         required: false
         type: string
@@ -43,19 +54,22 @@ jobs:
 
       - name: Create ZIP
         run: |
-          zip -r "${{ inputs.project }}_${{ inputs.environment }}_${{ steps.vars.outputs.timestamp }}.zip" . \
-            -x ".git/*" ".github/*"
+          ZIP_NAME="${{ inputs.project_key }}_${{ inputs.environment }}_${{ steps.vars.outputs.timestamp }}.zip"
+          zip -r "$ZIP_NAME" . -x ".git/*" ".github/*"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "${{ inputs.project }}_v${{ steps.vars.outputs.date }}_${{ inputs.environment }}"
-          name: "${{ inputs.project }} v${{ steps.vars.outputs.date }} (${{
-            inputs.environment }})"
+          tag_name: "${{ inputs.project_key }}_v${{ steps.vars.outputs.date }}_${{ inputs.environment }}"
+          name: "${{ inputs.project_key }} v${{ steps.vars.outputs.date }} (${{ inputs.environment }})"
           body: |
+            Request ID: ${{ inputs.request_id }}
+            Publisher: ${{ inputs.publisher_email }}
             Environment: ${{ inputs.environment }}
             Publish Mode: ${{ inputs.publish_mode }}
-            Notes: ${{ inputs.notes }}
+
+            Notes:
+            ${{ inputs.notes }}
           files: |
             *.zip
         env:
