@@ -1,0 +1,62 @@
+name: Create Release ZIP
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: choice
+        options:
+          - prod
+          - preprod
+          - test
+      publish_mode:
+        required: true
+        type: choice
+        options:
+          - immediate
+          - scheduled
+      notes:
+        required: false
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set variables
+        id: vars
+        run: |
+          DATE=$(date +'%Y.%m.%d')
+          TS=$(date +'%Y%m%d%H%M%S')
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "timestamp=$TS" >> $GITHUB_OUTPUT
+
+      - name: Create ZIP
+        run: |
+          zip -r "${{ inputs.project }}_${{ inputs.environment }}_${{ steps.vars.outputs.timestamp }}.zip" . \
+            -x ".git/*" ".github/*"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ inputs.project }}_v${{ steps.vars.outputs.date }}_${{ inputs.environment }}"
+          name: "${{ inputs.project }} v${{ steps.vars.outputs.date }} (${{
+            inputs.environment }})"
+          body: |
+            Environment: ${{ inputs.environment }}
+            Publish Mode: ${{ inputs.publish_mode }}
+            Notes: ${{ inputs.notes }}
+          files: |
+            *.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
