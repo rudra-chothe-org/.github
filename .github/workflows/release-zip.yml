@@ -101,9 +101,8 @@ jobs:
             Publisher: ${{ inputs.publisher_email }}
             Environment: ${{ inputs.environment }}
             Publish Mode: ${{ inputs.publish_mode }}
-
-          Notes:
-            ${{ inputs.notes }}
+            Notes:
+              ${{ inputs.notes }}
           files: |
             *.zip
         env:
