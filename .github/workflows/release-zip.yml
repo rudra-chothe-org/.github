@@ -1,6 +1,33 @@
 name: Create Release ZIP
 
 on:
+  workflow_call:
+    inputs:
+      project_key:
+        required: true
+        type: string
+
+      environment:
+        required: true
+        type: string
+
+      publish_mode:
+        required: true
+        type: string
+
+      request_id:
+        required: true
+        type: string
+
+      publisher_email:
+        required: true
+        type: string
+
+      notes:
+        required: false
+        type: string
+
+  # Optional: keep this if you want manual runs from GitHub UI
   workflow_dispatch:
     inputs:
       project_key:
